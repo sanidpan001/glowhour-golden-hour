@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golden Hour Calculator — What Time Is Golden Hour Today? | GlowHour</title>
+<meta name="description" content="Free golden hour calculator: find what time golden hour is today for any location, plus blue hour time, sunrise, sunset and twilight windows. Pure solar math in your browser — no signup, works offline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What time is golden hour today?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Golden hour today is roughly the first hour after sunrise and the last hour before sunset at your location. The exact times shift every day with your latitude, longitude and the date, so the most accurate answer comes from a golden hour calculator: enter your coordinates (or tap the location button) and GlowHour computes today's morning and evening golden windows to the minute using standard solar equations." }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does golden hour last?",
+      "acceptedAnswer": { "@type": "Answer", "text": "At the equator golden hour lasts about 50-60 minutes per window. At mid-latitudes it is typically 60-75 minutes, and near the poles in summer it can stretch to several hours because the sun stays low for longer. In winter at high latitudes the sun may never climb above 6 degrees, which turns the whole short day into one extended golden glow." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is blue hour time?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Blue hour time is the window when the sun sits between 4 and 6 degrees below the horizon. In the morning it runs from about 30 minutes before sunrise to about 15 minutes before sunrise; in the evening it runs from about 15 minutes after sunset to about 35 minutes after sunset. The sky turns a deep, saturated blue while city lights are on, which is why photographers prize it." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is golden hour at a different time every day?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Sunrise and sunset times change daily because Earth's axis is tilted 23.4 degrees and our orbit is slightly elliptical. After the summer solstice days shorten and golden hour slides earlier in the evening; after the winter solstice the reverse happens. Your latitude controls how dramatic the swing is: near the equator times barely move, while at 60 degrees north the evening golden hour can shift by hours between June and December." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is golden hour the same time everywhere in the world?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Golden hour depends on your exact latitude and longitude. Two cities in the same time zone can have golden hours 30 or more minutes apart if one is further east. That is why a calculator that uses your coordinates beats any generic 'golden hour is at 6 PM' rule of thumb." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does the GlowHour golden hour calculator work offline?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. GlowHour computes sunrise, sunset, golden hour and blue hour with pure JavaScript solar math (NOAA-style equations) running entirely in your browser. No weather API, no sun API and no account is needed. You can type coordinates manually or use your device's GPS once, and every calculation after that works offline." }
+    }
+  ]
+}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #1B2340; }
+  .font-display { font-family: 'Sora', 'Inter', sans-serif; }
+  #starCanvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+  .glass { background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.10); backdrop-filter: blur(10px); }
+  .brand-gradient { background: linear-gradient(100deg, #FF9E5E 10%, #F472B6 45%, #7B5EA7 90%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .btn-sun { background: linear-gradient(135deg, #FF9E5E, #F97362); color: #1B2340; font-weight: 700; transition: transform .15s ease, box-shadow .15s ease; box-shadow: 0 6px 24px rgba(255,158,94,.35); }
+  .btn-sun:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(255,158,94,.45); }
+  .btn-ghost { border: 1px solid rgba(255,255,255,.18); transition: background .15s ease; }
+  .btn-ghost:hover { background: rgba(255,255,255,.08); }
+  input, select { color-scheme: dark; }
+  .field { background: rgba(10,14,32,.65); border: 1px solid rgba(255,255,255,.14); border-radius: .75rem; padding: .6rem .8rem; width: 100%; color: #F1F5F9; }
+  .field:focus { outline: 2px solid #FF9E5E; border-color: #FF9E5E; }
+  .tabbtn { border: 1px solid rgba(255,255,255,.14); border-radius: 9999px; padding: .45rem 1.1rem; font-size: .85rem; font-weight: 600; color: #CBD5E1; transition: all .15s ease; white-space: nowrap; }
+  .tabbtn.active { background: linear-gradient(135deg, #FF9E5E, #F97362); color: #1B2340; border-color: transparent; }
+  .tabbtn:not(.active):hover { background: rgba(255,255,255,.08); color: #fff; }
+  input[type="range"].skyslider { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 9999px;
+    background: linear-gradient(90deg, #0B1026 0%, #7B5EA7 22%, #FF9E5E 50%, #7B5EA7 78%, #0B1026 100%); outline: none; }
+  input[type="range"].skyslider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 9999px;
+    background: radial-gradient(circle at 35% 35%, #FFE3B3, #FF9E5E 70%); border: 2px solid rgba(255,255,255,.45); cursor: pointer; box-shadow: 0 0 14px rgba(255,158,94,.9); }
+  input[type="range"].skyslider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 9999px;
+    background: radial-gradient(circle at 35% 35%, #FFE3B3, #FF9E5E 70%); border: 2px solid rgba(255,255,255,.45); cursor: pointer; box-shadow: 0 0 14px rgba(255,158,94,.9); }
+  .faq summary { cursor: pointer; list-style: none; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary .plus { transition: transform .2s ease; display: inline-block; }
+  .faq[open] summary .plus { transform: rotate(45deg); }
+  .checkrow input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: #FF9E5E; flex-shrink: 0; margin-top: .15rem; }
+  .checkrow.done .shot { text-decoration: line-through; opacity: .55; }
+  .article h2 { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.35rem; margin: 2.2rem 0 .8rem; color: #FFD9B8; }
+  .article p { margin: .8rem 0; line-height: 1.75; color: #CBD5E1; }
+  .article ul { margin: .8rem 0 .8rem 1.2rem; list-style: disc; color: #CBD5E1; line-height: 1.7; }
+  .article li { margin: .35rem 0; }
+  .article strong { color: #F1F5F9; }
+  @media (max-width: 400px) { .stat-num { font-size: 1.35rem; } }
+</style>
+</head>
+<body id="top" class="text-slate-100 antialiased min-h-screen">
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+
+<header class="sticky top-0 z-50 border-b border-white/10 bg-[#141B36]/85 backdrop-blur-md">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
+    <a href="#top" class="font-display font-extrabold text-xl tracking-tight"><span class="brand-gradient">GlowHour</span><span class="text-slate-400 text-sm font-medium ml-2 hidden sm:inline">golden hour, mapped</span></a>
+    <nav class="flex items-center gap-5 text-sm font-medium">
+      <a href="#top" class="text-slate-300 hover:text-white transition">Home</a>
+      <a href="https://fixoraa.tech" class="text-slate-300 hover:text-white transition">More Tools</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 pt-10 pb-2 text-center">
+    <span class="inline-flex items-center gap-2 rounded-full border border-[#FF9E5E]/40 bg-[#FF9E5E]/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-[#FFC79A] uppercase">
+      <span class="inline-block w-2 h-2 rounded-full bg-[#FF9E5E] animate-pulse"></span>
+      Unlimited Free Usage
+    </span>
+    <h1 class="font-display font-extrabold text-3xl sm:text-5xl mt-5 leading-tight">Golden Hour <span class="brand-gradient">Calculator</span></h1>
+    <p class="text-slate-300/90 max-w-2xl mx-auto mt-4 text-sm sm:text-base leading-relaxed">
+      Wondering <strong class="text-white">what time is golden hour today</strong>? Enter any location and GlowHour draws the sun's
+      path across your sky — with today's golden hour windows, <strong class="text-white">blue hour time</strong>, twilight times and a
+      7-day planner. Pure solar math, right in your browser. No signup, no paywall, no watermark.
+    </p>
+  </section>
+
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-8" aria-label="Golden hour calculator tool">
+    <div class="glass rounded-3xl p-5 sm:p-8 shadow-2xl">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+        <h2 class="font-display font-bold text-xl sm:text-2xl">Your sky, <span class="text-[#FF9E5E]">today</span></h2>
+        <div id="nowBanner" class="text-sm text-slate-300"></div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <label class="block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Latitude</span>
+          <input id="gh-lat" class="field mt-1" type="number" step="any" min="-90" max="90" value="28.6139" placeholder="e.g. 28.6139">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Longitude</span>
+          <input id="gh-lon" class="field mt-1" type="number" step="any" min="-180" max="180" value="77.2090" placeholder="e.g. 77.2090">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Date</span>
+          <input id="gh-date" class="field mt-1" type="date">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Display timezone</span>
+          <select id="gh-tz" class="field mt-1"></select>
+        </label>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button id="gh-locate" class="btn-sun rounded-xl px-4 py-2.5 text-sm">Use my location</button>
+        <select id="gh-city" class="field text-sm" style="width:auto" aria-label="Jump to a city">
+          <option value="">Jump to a city…</option>
+        </select>
+        <button id="gh-calc" class="btn-ghost rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-100">Calculate</button>
+      </div>
+      <p id="gh-error" class="hidden mb-4 text-sm text-red-300 bg-red-500/10 border border-red-400/30 rounded-xl px-4 py-2.5" role="alert"></p>
+      <p class="text-xs text-slate-400 mb-6">All times are computed on your device with standard solar equations — no location data ever leaves your browser.</p>
+
+      <div class="glass rounded-2xl p-4 sm:p-6 mb-6">
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <h3 class="font-display font-semibold text-lg">Sun path <span class="text-slate-400 font-normal text-sm" id="skyDateLabel"></span></h3>
+          <button id="gh-now" class="btn-ghost rounded-lg px-3 py-1.5 text-xs font-semibold">Jump to now</button>
+        </div>
+        <svg id="skySvg" viewBox="0 0 720 320" class="w-full h-auto rounded-xl" role="img" aria-label="Sun path arc across the sky"></svg>
+        <div class="mt-3">
+          <input id="gh-slider" type="range" min="0" max="1439" value="720" class="skyslider" aria-label="Time of day scrubber">
+          <div class="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-sm">
+            <span>Time <strong id="ro-time" class="text-white">—</strong></span>
+            <span>Sun elevation <strong id="ro-el" class="text-white">—</strong></span>
+            <span>Light <strong id="ro-phase" class="text-[#FF9E5E]">—</strong></span>
+          </div>
+          <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-slate-400">
+            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm inline-block" style="background:rgba(255,158,94,.55)"></span>Golden hour</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm inline-block" style="background:rgba(123,94,167,.7)"></span>Blue hour</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm inline-block" style="background:rgba(3,7,20,.8);border:1px solid rgba(255,255,255,.2)"></span>Night</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="todayResults">
+        <div class="grid grid-cols-3 gap-3 mb-3">
+          <div class="glass rounded-2xl p-4 text-center">
+            <p class="text-[11px] uppercase tracking-widest text-slate-400 font-semibold">Sunrise</p>
+            <p id="r-sunrise" class="stat-num font-display font-bold text-2xl text-[#FFC79A] mt-1">—</p>
+          </div>
+          <div class="glass rounded-2xl p-4 text-center">
+            <p class="text-[11px] uppercase tracking-widest text-slate-400 font-semibold">Solar noon</p>
+            <p id="r-noon" class="stat-num font-display font-bold text-2xl text-white mt-1">—</p>
+          </div>
+          <div class="glass rounded-2xl p-4 text-center">
+            <p class="text-[11px] uppercase tracking-widest text-slate-400 font-semibold">Sunset</p>
+            <p id="r-sunset" class="stat-num font-display font-bold text-2xl text-[#B79CFF] mt-1">—</p>
+          </div>
+        </div>
+        <p class="text-sm text-slate-300 mb-5">Day length <strong id="r-daylen" class="text-white">—</strong> &nbsp;·&nbsp; <span id="r-quality" class="text-[#FFC79A]"></span></p>
+
+        <div class="grid sm:grid-cols-2 gap-3 mb-6">
+          <div class="rounded-2xl p-5 border border-[#FF9E5E]/40" style="background:linear-gradient(135deg, rgba(255,158,94,.16), rgba(255,158,94,.04))">
+            <p class="text-xs uppercase tracking-widest font-bold text-[#FF9E5E]">Morning golden hour</p>
+            <p id="gm-time" class="font-display font-bold text-xl mt-2">—</p>
+            <p class="text-sm text-slate-300 mt-1">Lasts <strong id="gm-dur" class="text-white">—</strong></p>
+            <p id="gm-note" class="text-xs text-slate-400 mt-2"></p>
+          </div>
+          <div class="rounded-2xl p-5 border border-[#7B5EA7]/50" style="background:linear-gradient(135deg, rgba(123,94,167,.22), rgba(123,94,167,.05))">
+            <p class="text-xs uppercase tracking-widest font-bold text-[#B79CFF]">Evening golden hour</p>
+            <p id="ge-time" class="font-display font-bold text-xl mt-2">—</p>
+            <p class="text-sm text-slate-300 mt-1">Lasts <strong id="ge-dur" class="text-white">—</strong></p>
+            <p id="ge-note" class="text-xs text-slate-400 mt-2"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 overflow-x-auto pb-1 mb-5" role="tablist" aria-label="Planner tabs">
+        <button class="tabbtn active" data-tab="tab-week" role="tab">7-day planner</button>
+        <button class="tabbtn" data-tab="tab-blue" role="tab">Blue hour &amp; twilight</button>
+        <button class="tabbtn" data-tab="tab-shoot" role="tab">Shoot checklists</button>
+        <button class="tabbtn" data-tab="tab-saved" role="tab">Saved places</button>
+      </div>
+
+      <div id="tab-week" role="tabpanel">
+        <h3 class="font-display font-semibold text-lg mb-1">Golden-week planner</h3>
+        <p class="text-sm text-slate-400 mb-4">Seven days of golden-hour times for this location — plan the whole week's shoots in one glance.</p>
+        <div class="overflow-x-auto rounded-2xl border border-white/10">
+          <table class="w-full text-sm min-w-[640px]">
+            <thead>
+              <tr class="text-left text-[11px] uppercase tracking-widest text-slate-400 bg-white/5">
+                <th class="px-4 py-3 font-semibold">Date</th>
+                <th class="px-4 py-3 font-semibold">Sunrise</th>
+                <th class="px-4 py-3 font-semibold">Sunset</th>
+                <th class="px-4 py-3 font-semibold">Morning golden</th>
+                <th class="px-4 py-3 font-semibold">Evening golden</th>
+                <th class="px-4 py-3 font-semibold">Day length</th>
+              </tr>
+            </thead>
+            <tbody id="weekBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-blue" role="tabpanel" class="hidden">
+        <h3 class="font-display font-semibold text-lg mb-1">Blue hour &amp; twilight windows</h3>
+        <p class="text-sm text-slate-400 mb-4">Blue hour is when the sun sits 4–6° below the horizon — deep blue sky, city lights on. Twilight bands follow.</p>
+        <div class="grid sm:grid-cols-2 gap-3 mb-4">
+          <div class="rounded-2xl p-5 border border-[#7B5EA7]/50 bg-[#7B5EA7]/10">
+            <p class="text-xs uppercase tracking-widest font-bold text-[#B79CFF]">Morning blue hour</p>
+            <p id="bm-time" class="font-display font-bold text-lg mt-2">—</p>
+            <p class="text-sm text-slate-400 mt-1">Lasts <strong id="bm-dur" class="text-slate-200">—</strong></p>
+          </div>
+          <div class="rounded-2xl p-5 border border-[#7B5EA7]/50 bg-[#7B5EA7]/10">
+            <p class="text-xs uppercase tracking-widest font-bold text-[#B79CFF]">Evening blue hour</p>
+            <p id="be-time" class="font-display font-bold text-lg mt-2">—</p>
+            <p class="text-sm text-slate-400 mt-1">Lasts <strong id="be-dur" class="text-slate-200">—</strong></p>
+          </div>
+        </div>
+        <div class="overflow-x-auto rounded-2xl border border-white/10">
+          <table class="w-full text-sm min-w-[480px]">
+            <thead>
+              <tr class="text-left text-[11px] uppercase tracking-widest text-slate-400 bg-white/5">
+                <th class="px-4 py-3 font-semibold">Twilight</th>
+                <th class="px-4 py-3 font-semibold">Morning</th>
+                <th class="px-4 py-3 font-semibold">Evening</th>
+                <th class="px-4 py-3 font-semibold">What it means</th>
+              </tr>
+            </thead>
+            <tbody id="twBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-shoot" role="tabpanel" class="hidden">
+        <h3 class="font-display font-semibold text-lg mb-1">What to shoot — checklists</h3>
+        <p class="text-sm text-slate-400 mb-4">Pick a light window for a field-ready shot list. Tick shots off as you nail them.</p>
+        <label class="block max-w-xs mb-4">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Light window</span>
+          <select id="shootSelect" class="field mt-1">
+            <option value="golden-morning">Morning golden hour</option>
+            <option value="golden-evening">Evening golden hour</option>
+            <option value="blue-morning">Morning blue hour</option>
+            <option value="blue-evening">Evening blue hour</option>
+            <option value="civil">Civil twilight</option>
+            <option value="nautical">Nautical twilight</option>
+            <option value="astro">Astronomical twilight</option>
+          </select>
+        </label>
+        <div id="shootList" class="grid sm:grid-cols-2 gap-3"></div>
+      </div>
+
+      <div id="tab-saved" role="tabpanel" class="hidden">
+        <h3 class="font-display font-semibold text-lg mb-1">Saved places</h3>
+        <p class="text-sm text-slate-400 mb-4">Name a location once, then jump back to it with one tap. Stored only in this browser.</p>
+        <div class="grid sm:grid-cols-4 gap-3 mb-4">
+          <label class="block sm:col-span-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Place name</span>
+            <input id="sv-name" class="field mt-1" placeholder="e.g. Goa beach shoot">
+          </label>
+          <label class="block">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Latitude</span>
+            <input id="sv-lat" class="field mt-1" type="number" step="any" placeholder="15.2993">
+          </label>
+          <label class="block">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Longitude</span>
+            <input id="sv-lon" class="field mt-1" type="number" step="any" placeholder="74.1240">
+          </label>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-5">
+          <button id="sv-save" class="btn-sun rounded-xl px-4 py-2.5 text-sm">Save this place</button>
+          <button id="sv-save-current" class="btn-ghost rounded-xl px-4 py-2.5 text-sm font-semibold">Save current coordinates</button>
+        </div>
+        <div id="sv-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        <p id="sv-empty" class="text-sm text-slate-500">No saved places yet — your favourite shoot spots will appear here.</p>
+      </div>
+    </div>
+  </section>
+
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="464498"></script>
+    </div>
+  </div>
+</div>
+
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 pb-4">
+    <article class="article glass rounded-3xl p-6 sm:p-10">
+      <h2>What Is the Golden Hour?</h2>
+      <p>The golden hour is the period shortly after sunrise and shortly before sunset when the sun sits low in the sky — roughly between 0 and 6 degrees above the horizon — and daylight takes on a warm, golden quality. Photographers, filmmakers and painters have chased this light for centuries because it flatters almost everything it touches: skin tones glow, landscapes gain depth, and long shadows add drama that the flat light of midday can never produce.</p>
+      <p>The science is simple. When the sun is high, sunlight travels a short path through the atmosphere. When the sun is low, the same light must cross far more air, dust and water vapour. Shorter blue wavelengths scatter away (the same Rayleigh scattering that makes the sky blue), while the longer red, orange and gold wavelengths survive the journey. The result is softer, warmer and more directional light — and because the sun is near the horizon, it rakes across surfaces instead of beating down on them.</p>
+
+      <h2>How This Golden Hour Calculator Works</h2>
+      <p>GlowHour is a <strong>golden hour calculator</strong> built on real astronomy, not guesswork. Give it any latitude, longitude and date, and it computes the sun's exact position through the day using NOAA-style solar equations: the day of the year feeds a fractional-year angle, which yields the solar declination and the equation of time, which in turn give the hour angle for any chosen solar elevation. From there, sunrise, sunset, the golden-hour boundaries (6° elevation) and the blue-hour band (−4° to −6° elevation) fall out to within about a minute of official almanac values.</p>
+      <p>Everything runs as pure JavaScript inside your browser. There is no weather API to call, no sun-position API to pay for, and no account to create. That means the calculator works offline, responds instantly, and never sends your location anywhere — the coordinates you type or share from your device GPS stay on your device. If you deny location permission, just type coordinates manually or jump to a city from the preset list.</p>
+
+      <h2>What Time Is Golden Hour Today?</h2>
+      <p>As a rough rule, morning golden hour runs from sunrise until about an hour later, and evening golden hour runs from about an hour before sunset until sunset. But "about an hour" hides real variation: the exact window depends on your latitude, your longitude and the date. The only honest answer to <strong>"what time is golden hour today"</strong> is a calculated one for your exact spot — which is precisely what the tool above gives you, including a live countdown so you know whether to grab your camera now or make chai first.</p>
+
+      <h2>Golden Hour vs Blue Hour: Know the Difference</h2>
+      <p>Golden hour ends at sunset. <strong>Blue hour time</strong> begins just after: it is the window when the sun sits 4 to 6 degrees <em>below</em> the horizon. The sky turns a deep, saturated cobalt blue while streetlights, windows and neon are already on — a contrast no filter can fake. In the morning, blue hour runs from roughly 30 minutes before sunrise to about 15 minutes before sunrise; in the evening, from about 15 minutes after sunset to about 35 minutes after sunset. It is shorter than golden hour, so arrive early and have your composition ready.</p>
+      <p>After blue hour come the twilights. <strong>Civil twilight</strong> (sun 0–6° below horizon) still holds enough light for outdoor activity without lamps. <strong>Nautical twilight</strong> (6–12°) is when sailors could once see the horizon and the first stars together — today it is prime time for seascapes. <strong>Astronomical twilight</strong> (12–18°) is when the sky is dark enough for serious stargazing. GlowHour lists all three, morning and evening, so night photographers know exactly when the Milky Way becomes fair game.</p>
+
+      <h2>How Long Does Golden Hour Last?</h2>
+      <p>It depends on where you stand on the planet:</p>
+      <ul>
+        <li><strong>Near the equator</strong> (e.g. Singapore, Quito): the sun dives almost vertically, so each golden window lasts about 50–60 minutes, all year round.</li>
+        <li><strong>Mid-latitudes</strong> (e.g. New York, Delhi, London): typically 60–80 minutes per window, longer in summer when the sun takes a shallow path to the horizon.</li>
+        <li><strong>High latitudes in summer</strong> (e.g. Reykjavik, Stockholm): the sun skims the horizon for hours — golden light can stretch to 3–4 hours around midnight.</li>
+        <li><strong>High latitudes in winter</strong>: the sun may never climb above 6°, turning the entire short day into one long, moody golden glow.</li>
+      </ul>
+      <p>The 7-day planner above shows this drift in action: watch the windows slide a few minutes each day as the seasons turn.</p>
+
+      <h2>Best Times to Shoot: A Practical Guide</h2>
+      <p><strong>Portraits:</strong> the last 30 minutes of evening golden hour give the warmest, most flattering skin tones. Put the sun behind your subject for glowing rim light and bounce a little fill into the face. <strong>Landscapes:</strong> morning golden hour usually has calmer air and fewer crowds; evening gives richer colour. <strong>Cityscapes:</strong> blue hour beats golden hour — arrive during the golden window, shoot the sunset, then stay put as the city lights switch on. <strong>Silhouettes:</strong> expose for the bright sky and let your subject go black; the 10 minutes straddling sunset are ideal.</p>
+      <p>Three habits separate good golden-hour shooters from frustrated ones. First, <strong>arrive early</strong> — the best light is often the first 15 minutes, and fumbling with a tripod then is painful. Second, <strong>stay late</strong> — the afterglow 10–20 minutes after sunset frequently outshines the sunset itself. Third, <strong>check the planner, not the sky</strong> — a calculator tells you the window days ahead, so you can be in position instead of hoping.</p>
+
+      <h2>Golden Hour Around the World</h2>
+      <p>Because golden hour is pure geometry, it behaves differently everywhere. In Mumbai in October, evening golden hour lands around 5:00–6:00 PM; in London in June it stretches from roughly 7:45 PM past 9:30 PM. Travelling east or west within one time zone shifts your windows by about 4 minutes per degree of longitude — which is why two photographers in the same time zone can have golden hours half an hour apart. The saved-places feature exists for exactly this: store every shoot location once and compare their light at a tap.</p>
+
+      <h2>How to Use GlowHour</h2>
+      <p><strong>1. Set your location.</strong> Tap "Use my location" for GPS coordinates, pick a city, or type latitude and longitude manually. <strong>2. Pick a date.</strong> Today is the default; choose any date to scout a future shoot. <strong>3. Read the sky.</strong> The sun-path arc shows the whole day at a glance — drag the time slider to preview the sun's elevation and light phase at any minute. <strong>4. Plan the week.</strong> The golden-week planner tables seven days of windows for trip planning. <strong>5. Chase the blue.</strong> The blue hour &amp; twilight tab lists blue windows and all three twilight bands. <strong>6. Shoot smarter.</strong> Each light window has a tick-off checklist of shots worth attempting while the light lasts.</p>
+      <p>Times are shown in your chosen display timezone (your device timezone by default), and the math is accurate to about a minute under the standard atmospheric-refraction model — good enough to plan any shoot with confidence.</p>
+    </article>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 pb-12">
+    <h2 class="font-display font-bold text-2xl mb-5 text-center">Frequently asked questions</h2>
+    <div class="space-y-3 max-w-3xl mx-auto">
+      <details class="faq glass rounded-2xl px-5 py-4">
+        <summary class="font-semibold flex items-center justify-between gap-3">What time is golden hour today? <span class="plus text-[#FF9E5E] text-xl leading-none">+</span></summary>
+        <p class="text-sm text-slate-300 mt-3 leading-relaxed">Golden hour today is roughly the first hour after sunrise and the last hour before sunset at your location. The exact times shift every day with your latitude, longitude and the date, so the most accurate answer comes from a golden hour calculator: enter your coordinates (or tap the location button) and GlowHour computes today's morning and evening golden windows to the minute using standard solar equations.</p>
+      </details>
+      <details class="faq glass rounded-2xl px-5 py-4">
+        <summary class="font-semibold flex items-center justify-between gap-3">How long does golden hour last? <span class="plus text-[#FF9E5E] text-xl leading-none">+</span></summary>
+        <p class="text-sm text-slate-300 mt-3 leading-relaxed">At the equator golden hour lasts about 50–60 minutes per window. At mid-latitudes it is typically 60–75 minutes, and near the poles in summer it can stretch to several hours because the sun stays low for longer. In winter at high latitudes the sun may never climb above 6 degrees, which turns the whole short day into one extended golden glow.</p>
+      </details>
+      <details class="faq glass rounded-2xl px-5 py-4">
+        <summary class="font-semibold flex items-center justify-between gap-3">What is blue hour time? <span class="plus text-[#FF9E5E] text-xl leading-none">+</span></summary>
+        <p class="text-sm text-slate-300 mt-3 leading-relaxed">Blue hour time is the window when the sun sits between 4 and 6 degrees below the horizon. In the morning it runs from about 30 minutes before sunrise to about 15 minutes before sunrise; in the evening it runs from about 15 minutes after sunset to about 35 minutes after sunset. The sky turns a deep, saturated blue while city lights are on, which is why photographers prize it.</p>
+      </details>
+      <details class="faq glass rounded-2xl px-5 py-4">
+        <summary class="font-semibold flex items-center justify-between gap-3">Why is golden hour at a different time every day? <span class="plus text-[#FF9E5E] text-xl leading-none">+</span></summary>
+        <p class="text-sm text-slate-300 mt-3 leading-relaxed">Sunrise and sunset times change daily because Earth's axis is tilted 23.4 degrees and our orbit is slightly elliptical. After the summer solstice days shorten and golden hour slides earlier in the evening; after the winter solstice the reverse happens. Your latitude controls how dramatic the swing is: near the equator times barely move, while at 60 degrees north the evening golden hour can shift by hours between June and December.</p>
+      </details>
+      <details class="faq glass rounded-2xl px-5 py-4">
+        <summary class="font-semibold flex items-center justify-between gap-3">Is golden hour the same time everywhere in the world? <span class="plus text-[#FF9E5E] text-xl leading-none">+</span></summary>
+        <p class="text-sm text-slate-300 mt-3 leading-relaxed">No. Golden hour depends on your exact latitude and longitude. Two cities in the same time zone can have golden hours 30 or more minutes apart if one is further east. That is why a calculator that uses your coordinates beats any generic "golden hour is at 6 PM" rule of thumb.</p>
+      </details>
+      <details class="faq glass rounded-2xl px-5 py-4">
+        <summary class="font-semibold flex items-center justify-between gap-3">Does the GlowHour golden hour calculator work offline? <span class="plus text-[#FF9E5E] text-xl leading-none">+</span></summary>
+        <p class="text-sm text-slate-300 mt-3 leading-relaxed">Yes. GlowHour computes sunrise, sunset, golden hour and blue hour with pure JavaScript solar math (NOAA-style equations) running entirely in your browser. No weather API, no sun API and no account is needed. You can type coordinates manually or use your device's GPS once, and every calculation after that works offline.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-white/10 py-8">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-400">
+    <p><span class="brand-gradient font-display font-bold">GlowHour</span> · golden hour, mapped. Free forever.</p>
+    <p class="text-xs">Times computed with standard solar equations (accuracy ≈ 1 minute).</p>
+    <a href="https://fixoraa.tech" class="hover:text-white transition">More Tools</a>
+  </div>
+</footer>
+
+<script id="glowhour-golden-hour-lib">
+/* GlowHour golden-hour logic — pure functions, no DOM.
+ * Shipped inside <script id="glowhour-golden-hour-lib"> in glowhour-golden-hour.html.
+ * Tests eval this exact block from the finished HTML.
+ *
+ * Model: NOAA-style solar equations. All event times are minutes-from-midnight
+ * UTC for an explicit calendar date (y, m, d). Display-timezone handling lives
+ * in the page script, not here. No Date(), no DOM, no network.
+ *
+ * Zenith conventions:
+ *   sunrise/sunset        90.833 deg (upper limb + refraction)
+ *   golden-hour edge       6 deg elevation  (zenith 84)
+ *   blue-hour band        -4..-6 deg elevation (zenith 94..96)
+ *   civil / nautical / astronomical twilight: 96 / 102 / 108 deg zenith
+ */
+'use strict';
+
+var GH_RAD = Math.PI / 180;
+var GH_DEG = 180 / Math.PI;
+var GH_ZENITH_RISESET = 90.833;
+var GH_ZENITH_GOLDEN = 84;       /* 6 deg elevation */
+var GH_ZENITH_BLUE_INNER = 94;   /* -4 deg elevation */
+var GH_ZENITH_BLUE_OUTER = 96;   /* -6 deg elevation */
+var GH_ZENITH_NAUTICAL = 102;
+var GH_ZENITH_ASTRO = 108;
+var GH_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+var GH_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+                 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function ghClamp(n, lo, hi) {
+  if (typeof n !== 'number' || isNaN(n)) return lo;
+  return Math.min(hi, Math.max(lo, n));
+}
+
+function ghToNum(n, fallback) {
+  n = parseFloat(n);
+  return isNaN(n) ? fallback : n;
+}
+
+function isLeapYear(y) {
+  y = Math.round(ghToNum(y, 2000));
+  return (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
+}
+
+function daysInMonth(y, m) {
+  y = Math.round(ghToNum(y, 2000));
+  m = ghClamp(Math.round(ghToNum(m, 1)), 1, 12);
+  var table = [31, isLeapYear(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return table[m - 1];
+}
+
+/* Day of year, 1..366, from explicit y/m/d. */
+function dayOfYear(y, m, d) {
+  y = Math.round(ghToNum(y, 2000));
+  m = ghClamp(Math.round(ghToNum(m, 1)), 1, 12);
+  d = ghClamp(Math.round(ghToNum(d, 1)), 1, daysInMonth(y, m));
+  var n = d;
+  for (var i = 1; i < m; i++) n += daysInMonth(y, i);
+  return n;
+}
+
+/* Fractional year gamma in radians (NOAA). */
+function fractionalYear(n) {
+  return (2 * Math.PI / 365) * (ghToNum(n, 1) - 1);
+}
+
+/* Solar declination in radians (NOAA). */
+function solarDeclination(n) {
+  var g = fractionalYear(n);
+  return 0.006918
+    - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g)
+    - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g)
+    - 0.002697 * Math.cos(3 * g) + 0.001480 * Math.sin(3 * g);
+}
+
+/* Equation of time in minutes (NOAA). */
+function equationOfTime(n) {
+  var g = fractionalYear(n);
+  return 229.18 * (0.000075
+    + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g)
+    - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+}
+
+/* Hour angle in radians for a zenith angle, or null when the sun never
+ * crosses that zenith on this date/latitude. */
+function hourAngle(latDeg, declRad, zenithDeg) {
+  var lat = ghToNum(latDeg, 0) * GH_RAD;
+  var cosH = (Math.cos(zenithDeg * GH_RAD) - Math.sin(lat) * Math.sin(declRad)) /
+             (Math.cos(lat) * Math.cos(declRad));
+  if (cosH < -1 || cosH > 1) return null;
+  return Math.acos(ghClamp(cosH, -1, 1));
+}
+
+/* 'normal' | 'polar-day' | 'polar-night' from the sunrise zenith. */
+function polarStatus(latDeg, declRad) {
+  var lat = ghToNum(latDeg, 0) * GH_RAD;
+  var cosH = (Math.cos(GH_ZENITH_RISESET * GH_RAD) - Math.sin(lat) * Math.sin(declRad)) /
+             (Math.cos(lat) * Math.cos(declRad));
+  if (cosH < -1) return 'polar-day';
+  if (cosH > 1) return 'polar-night';
+  return 'normal';
+}
+
+/* Core: every solar event as minutes-from-midnight UTC for the given date.
+ * Any field may be null when the event does not occur (polar day/night or
+ * the sun never reaching that elevation). */
+function sunTimes(lat, lon, y, m, d) {
+  lat = ghToNum(lat, 0);
+  lon = ghToNum(lon, 0);
+  y = Math.round(ghToNum(y, 2000));
+  m = ghClamp(Math.round(ghToNum(m, 1)), 1, 12);
+  d = ghClamp(Math.round(ghToNum(d, 1)), 1, daysInMonth(y, m));
+  var n = dayOfYear(y, m, d);
+  var decl = solarDeclination(n);
+  var eqt = equationOfTime(n);
+  var noon = 720 - 4 * lon - eqt; /* solar noon, UTC minutes */
+
+  function ev(zenithDeg, morning) {
+    var ha = hourAngle(lat, decl, zenithDeg);
+    if (ha === null) return null;
+    var haDeg = ha * GH_DEG;
+    return morning ? noon - 4 * haDeg : noon + 4 * haDeg;
+  }
+
+  return {
+    y: y, m: m, d: d, n: n,
+    status: polarStatus(lat, decl),
+    declinationDeg: decl * GH_DEG,
+    equationOfTimeMin: eqt,
+    solarNoon: noon,
+    sunrise: ev(GH_ZENITH_RISESET, true),
+    sunset: ev(GH_ZENITH_RISESET, false),
+    goldenMorningEnd: ev(GH_ZENITH_GOLDEN, true),
+    goldenEveningStart: ev(GH_ZENITH_GOLDEN, false),
+    blueMorningOuter: ev(GH_ZENITH_BLUE_OUTER, true),
+    blueMorningInner: ev(GH_ZENITH_BLUE_INNER, true),
+    blueEveningInner: ev(GH_ZENITH_BLUE_INNER, false),
+    blueEveningOuter: ev(GH_ZENITH_BLUE_OUTER, false),
+    civilDawn: ev(GH_ZENITH_BLUE_OUTER, true),
+    civilDusk: ev(GH_ZENITH_BLUE_OUTER, false),
+    nauticalDawn: ev(GH_ZENITH_NAUTICAL, true),
+    nauticalDusk: ev(GH_ZENITH_NAUTICAL, false),
+    astroDawn: ev(GH_ZENITH_ASTRO, true),
+    astroDusk: ev(GH_ZENITH_ASTRO, false)
+  };
+}
+
+function ghWindow(start, end) {
+  if (start === null || end === null || !(end > start)) return null;
+  return { start: start, end: end, durationMin: end - start };
+}
+
+/* Morning golden hour: sunrise -> 6 deg elevation.
+ * Evening golden hour: 6 deg elevation -> sunset. */
+function goldenHourWindows(lat, lon, y, m, d) {
+  var t = sunTimes(lat, lon, y, m, d);
+  return {
+    status: t.status,
+    sunrise: t.sunrise,
+    sunset: t.sunset,
+    solarNoon: t.solarNoon,
+    morning: ghWindow(t.sunrise, t.goldenMorningEnd),
+    evening: ghWindow(t.goldenEveningStart, t.sunset),
+    dayLengthMin: (t.sunrise !== null && t.sunset !== null) ? t.sunset - t.sunrise : null
+  };
+}
+
+/* Blue hour band: sun between -4 and -6 deg elevation. */
+function blueHourWindows(lat, lon, y, m, d) {
+  var t = sunTimes(lat, lon, y, m, d);
+  return {
+    status: t.status,
+    morning: ghWindow(t.blueMorningOuter, t.blueMorningInner),
+    evening: ghWindow(t.blueEveningInner, t.blueEveningOuter)
+  };
+}
+
+/* Civil / nautical / astronomical twilight windows + durations. */
+function twilightTimes(lat, lon, y, m, d) {
+  var t = sunTimes(lat, lon, y, m, d);
+  return {
+    status: t.status,
+    civil: { dawn: t.civilDawn, dusk: t.civilDusk, durationMin:
+      (t.civilDawn !== null && t.sunrise !== null) ? t.sunrise - t.civilDawn : null,
+      duskDurationMin: (t.civilDusk !== null && t.sunset !== null) ? t.civilDusk - t.sunset : null },
+    nautical: { dawn: t.nauticalDawn, dusk: t.nauticalDusk },
+    astronomical: { dawn: t.astroDawn, dusk: t.astroDusk }
+  };
+}
+
+/* Sun elevation in degrees at a UTC minute-of-day. */
+function sunElevation(lat, lon, y, m, d, utcMinutes) {
+  var t = sunTimes(lat, lon, y, m, d);
+  var decl = t.declinationDeg * GH_RAD;
+  var latR = ghToNum(lat, 0) * GH_RAD;
+  var hDeg = (ghToNum(utcMinutes, 0) - t.solarNoon) * 0.25; /* 15 deg per hour */
+  var sinEl = Math.sin(latR) * Math.sin(decl) +
+              Math.cos(latR) * Math.cos(decl) * Math.cos(hDeg * GH_RAD);
+  return Math.asin(ghClamp(sinEl, -1, 1)) * GH_DEG;
+}
+
+/* Sun azimuth in degrees, 0 = north, clockwise. */
+function sunAzimuth(lat, lon, y, m, d, utcMinutes) {
+  var t = sunTimes(lat, lon, y, m, d);
+  var decl = t.declinationDeg * GH_RAD;
+  var latR = ghToNum(lat, 0) * GH_RAD;
+  var hDeg = (ghToNum(utcMinutes, 0) - t.solarNoon) * 0.25;
+  var hR = hDeg * GH_RAD;
+  var elR = Math.asin(ghClamp(
+    Math.sin(latR) * Math.sin(decl) + Math.cos(latR) * Math.cos(decl) * Math.cos(hR), -1, 1));
+  var cosA = (Math.sin(decl) - Math.sin(elR) * Math.sin(latR)) /
+             (Math.cos(elR) * Math.cos(latR));
+  var az = Math.acos(ghClamp(cosA, -1, 1)) * GH_DEG;
+  return hDeg > 0 ? (360 - az) % 360 : az; /* afternoon -> western half */
+}
+
+/* Sampled sun path for the sky-arc chart: [{t, elevation, azimuth}]. */
+function sunPath(lat, lon, y, m, d, steps) {
+  steps = Math.round(ghToNum(steps, 96));
+  steps = ghClamp(steps, 8, 720);
+  var out = [];
+  for (var i = 0; i <= steps; i++) {
+    var t = (1440 * i) / steps;
+    out.push({ t: t, elevation: sunElevation(lat, lon, y, m, d, t),
+               azimuth: sunAzimuth(lat, lon, y, m, d, t) });
+  }
+  return out;
+}
+
+/* Plain-language sky phase for an elevation. */
+function phaseForElevation(el) {
+  el = ghToNum(el, -90);
+  if (el >= 6) return 'Daylight';
+  if (el >= -0.833) return 'Golden Hour';
+  if (el >= -6) return 'Blue Hour';
+  if (el >= -12) return 'Nautical Twilight';
+  if (el >= -18) return 'Astronomical Twilight';
+  return 'Night';
+}
+
+/* Current sky state: elevation, phase label and window flags. */
+function currentPhase(lat, lon, y, m, d, utcMinutes) {
+  var el = sunElevation(lat, lon, y, m, d, utcMinutes);
+  var g = goldenHourWindows(lat, lon, y, m, d);
+  var b = blueHourWindows(lat, lon, y, m, d);
+  function inside(w) { return w !== null && utcMinutes >= w.start && utcMinutes <= w.end; }
+  return {
+    elevation: el,
+    phase: phaseForElevation(el),
+    inGolden: inside(g.morning) || inside(g.evening),
+    inBlue: inside(b.morning) || inside(b.evening),
+    isDay: el >= -0.833
+  };
+}
+
+/* Pure date increment; delta may be negative. */
+function addDays(y, m, d, delta) {
+  y = Math.round(ghToNum(y, 2000));
+  m = ghClamp(Math.round(ghToNum(m, 1)), 1, 12);
+  d = ghClamp(Math.round(ghToNum(d, 1)), 1, daysInMonth(y, m));
+  var step = ghToNum(delta, 0) >= 0 ? 1 : -1;
+  var n = Math.abs(Math.round(ghToNum(delta, 0)));
+  for (var i = 0; i < n; i++) {
+    d += step;
+    if (d > daysInMonth(y, m)) { d = 1; m++; if (m > 12) { m = 1; y++; } }
+    else if (d < 1) { m--; if (m < 1) { m = 12; y--; } d = daysInMonth(y, m); }
+  }
+  return { y: y, m: m, d: d };
+}
+
+/* Zeller's congruence -> 0 = Sunday .. 6 = Saturday. */
+function weekdayOf(y, m, d) {
+  var Y = Math.round(ghToNum(y, 2000));
+  var M = Math.round(ghToNum(m, 1));
+  if (M < 3) { M += 12; Y -= 1; }
+  var K = Y % 100, J = Math.floor(Y / 100);
+  var h = (Math.round(ghToNum(d, 1)) + Math.floor(13 * (M + 1) / 5) + K +
+           Math.floor(K / 4) + Math.floor(J / 4) + 5 * J) % 7;
+  return (h + 6) % 7;
+}
+
+/* 7-day golden-week planner: one entry per day starting at (y, m, d). */
+function weekPlanner(lat, lon, y, m, d) {
+  var out = [];
+  for (var i = 0; i < 7; i++) {
+    var dt = addDays(y, m, d, i);
+    var g = goldenHourWindows(lat, lon, dt.y, dt.m, dt.d);
+    var b = blueHourWindows(lat, lon, dt.y, dt.m, dt.d);
+    out.push({
+      y: dt.y, m: dt.m, d: dt.d,
+      weekday: weekdayOf(dt.y, dt.m, dt.d),
+      status: g.status,
+      sunrise: g.sunrise, sunset: g.sunset, solarNoon: g.solarNoon,
+      dayLengthMin: g.dayLengthMin,
+      goldenMorning: g.morning, goldenEvening: g.evening,
+      blueMorning: b.morning, blueEvening: b.evening
+    });
+  }
+  return out;
+}
+
+/* '6:42 AM' style clock; utcMinutes may be null -> em dash. */
+function formatClock(utcMinutes, offsetMin) {
+  if (utcMinutes === null || utcMinutes === undefined || isNaN(utcMinutes)) return '—';
+  var total = Math.round(ghToNum(utcMinutes, 0) + ghToNum(offsetMin, 0));
+  total = ((total % 1440) + 1440) % 1440;
+  var h = Math.floor(total / 60), m = total % 60;
+  var ap = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  return h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
+}
+
+/* 75 -> '1h 15m', 45 -> '45m'. */
+function formatDuration(mins) {
+  if (mins === null || mins === undefined || isNaN(mins)) return '—';
+  mins = Math.round(ghToNum(mins, 0));
+  if (mins < 0) mins = 0;
+  var h = Math.floor(mins / 60), m = mins % 60;
+  if (h <= 0) return m + 'm';
+  return h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
+}
+
+/* '2026-10-02' style date label from explicit y/m/d. */
+function formatDateLabel(y, m, d) {
+  y = Math.round(ghToNum(y, 2000));
+  m = ghClamp(Math.round(ghToNum(m, 1)), 1, 12);
+  d = ghClamp(Math.round(ghToNum(d, 1)), 1, daysInMonth(y, m));
+  var mm = (m < 10 ? '0' : '') + m, dd = (d < 10 ? '0' : '') + d;
+  return GH_WEEKDAYS[weekdayOf(y, m, d)] + ', ' + GH_MONTHS[m - 1] + ' ' + d + ', ' + y;
+}
+
+function shortDateLabel(y, m, d) {
+  y = Math.round(ghToNum(y, 2000));
+  m = ghClamp(Math.round(ghToNum(m, 1)), 1, 12);
+  d = ghClamp(Math.round(ghToNum(d, 1)), 1, daysInMonth(y, m));
+  return GH_WEEKDAYS[weekdayOf(y, m, d)].slice(0, 3) + ' ' + d + ' ' + GH_MONTHS[m - 1].slice(0, 3);
+}
+
+/* Validate user-entered coordinates. */
+function validateCoords(lat, lon) {
+  var errors = [];
+  var la = parseFloat(lat), lo = parseFloat(lon);
+  if (lat === '' || lat === null || lat === undefined || isNaN(la)) {
+    errors.push('Enter a latitude between -90 and 90.');
+  } else if (la < -90 || la > 90) {
+    errors.push('Latitude must be between -90 and 90 degrees.');
+  }
+  if (lon === '' || lon === null || lon === undefined || isNaN(lo)) {
+    errors.push('Enter a longitude between -180 and 180.');
+  } else if (lo < -180 || lo > 180) {
+    errors.push('Longitude must be between -180 and 180 degrees.');
+  }
+  return { ok: errors.length === 0, lat: la, lon: lo, errors: errors };
+}
+
+/* Friendly label for total golden light in a day. */
+function goldenQuality(totalGoldenMin) {
+  totalGoldenMin = ghToNum(totalGoldenMin, 0);
+  if (totalGoldenMin >= 160) return 'Long, dreamy golden light — a photographer\u2019s day';
+  if (totalGoldenMin >= 110) return 'Generous golden windows — plan two shoots';
+  if (totalGoldenMin >= 60) return 'Classic golden hour — don\u2019t be late';
+  if (totalGoldenMin > 0) return 'Short, precious window — be in position early';
+  return 'No classic golden hour today — the sun stays too low or never sets';
+}
+
+/* "What to shoot" checklists per light window. Pure content data. */
+function shootChecklist(windowKey) {
+  var lists = {
+    'golden-morning': [
+      { shot: 'Backlit portraits in soft, flattering light', tip: 'Arrive 20 minutes before the window starts; the first 15 minutes are the softest.' },
+      { shot: 'Long shadows across streets and fields', tip: 'Shoot low angles so shadows stretch toward the camera for depth.' },
+      { shot: 'Morning mist over water or valleys', tip: 'Expose for the highlights — mist blows out fast in auto mode.' },
+      { shot: 'City waking up: empty streets, opening shops', tip: 'Use the warm light on building faces that catch the first sun.' },
+      { shot: 'Dew and macro details', tip: 'Backlight dewdrops and flowers; a small reflector fills the shadows.' }
+    ],
+    'golden-evening': [
+      { shot: 'Silhouettes against the setting sun', tip: 'Meter on the bright sky, not your subject, for crisp black shapes.' },
+      { shot: 'Rim-lit portraits with golden hair light', tip: 'Put the sun behind your subject at 45 degrees and fill faces with a reflector.' },
+      { shot: 'Warm landscapes and glowing horizons', tip: 'Underexpose by 1/3 to 2/3 stop to keep the sky richly saturated.' },
+      { shot: 'Reflections on water, glass and wet streets', tip: 'Stay 10 minutes after sunset — the afterglow often outshines the sunset itself.' },
+      { shot: 'Lens-flare creative shots', tip: 'Stop down to f/11–f/16 for starburst flares; keep a microfiber cloth handy.' }
+    ],
+    'blue-morning': [
+      { shot: 'City skyline with windows still lit', tip: 'This is the money shot of blue hour — buildings glow against deep blue sky.' },
+      { shot: 'Long-exposure light trails before traffic builds', tip: 'Tripod is mandatory; start at ISO 100, f/8, 4–8 seconds.' },
+      { shot: 'Quiet harbours and bridges', tip: 'Bracket 3 exposures; blue-hour contrast fools meters.' },
+      { shot: 'Street scenes with neon and lamps on', tip: 'Arrive before the window opens so you are composed when the blue peaks.' }
+    ],
+    'blue-evening': [
+      { shot: 'City lights flickering on at dusk', tip: 'The sweet spot is the middle 10 minutes, when sky and streetlights balance.' },
+      { shot: 'Blue-hour portraits with city bokeh', tip: 'Wide aperture (f/1.8–f/2.8) turns background lights into glowing orbs.' },
+      { shot: 'Car trails and illuminated monuments', tip: 'Use a 2-second timer or remote so the tripod shot stays tack-sharp.' },
+      { shot: 'Reflections doubling the blue', tip: 'Wet pavement after rain doubles your light sources for free.' }
+    ],
+    'civil': [
+      { shot: 'Last colour gradients after sunset', tip: 'Face away from the sunset too — the anti-twilight arch glows pink.' },
+      { shot: 'Handheld street photography', tip: 'Still enough light for handheld; push ISO before reaching for the tripod.' }
+    ],
+    'nautical': [
+      { shot: 'Horizon lines at sea with first stars', tip: 'The horizon is still visible — perfect for balanced seascapes.' },
+      { shot: 'First bright stars over silhouetted land', tip: 'Wide lens, f/2.8, ISO 1600, 10 seconds is a safe starting point.' }
+    ],
+    'astro': [
+      { shot: 'Milky Way core (season permitting)', tip: 'Use the 500 rule: shutter = 500 / focal length to avoid star trails.' },
+      { shot: 'Star trails over a fixed landmark', tip: 'Stack 60+ thirty-second exposures instead of one very long shot.' },
+      { shot: 'Silhouetted foregrounds under star fields', tip: 'Light-paint the foreground briefly with a dim torch during one frame.' }
+    ]
+  };
+  if (lists[windowKey]) return lists[windowKey];
+  return [
+    { shot: 'Scout the location in daylight first', tip: 'Know your composition before the light gets good — windows are short.' },
+    { shot: 'Charge batteries and clear memory cards', tip: 'Cold twilight air drains batteries faster than you expect.' }
+  ];
+}
+
+</script>
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+
+  var CITIES = [
+    { name: 'New Delhi, India', lat: 28.6139, lon: 77.2090 },
+    { name: 'Mumbai, India', lat: 19.0760, lon: 72.8777 },
+    { name: 'Kolkata, India', lat: 22.5726, lon: 88.3639 },
+    { name: 'Chennai, India', lat: 13.0827, lon: 80.2707 },
+    { name: 'Bengaluru, India', lat: 12.9716, lon: 77.5946 },
+    { name: 'Dubai, UAE', lat: 25.2048, lon: 55.2708 },
+    { name: 'Singapore', lat: 1.3521, lon: 103.8198 },
+    { name: 'Tokyo, Japan', lat: 35.6762, lon: 139.6503 },
+    { name: 'Sydney, Australia', lat: -33.8688, lon: 151.2093 },
+    { name: 'London, UK', lat: 51.5074, lon: -0.1278 },
+    { name: 'Paris, France', lat: 48.8566, lon: 2.3522 },
+    { name: 'Berlin, Germany', lat: 52.5200, lon: 13.4050 },
+    { name: 'Cairo, Egypt', lat: 30.0444, lon: 31.2357 },
+    { name: 'Cape Town, South Africa', lat: -33.9249, lon: 18.4241 },
+    { name: 'Rio de Janeiro, Brazil', lat: -22.9068, lon: -43.1729 },
+    { name: 'New York, USA', lat: 40.7128, lon: -74.0060 },
+    { name: 'Los Angeles, USA', lat: 34.0522, lon: -118.2437 },
+    { name: 'Honolulu, USA', lat: 21.3099, lon: -157.8581 },
+    { name: 'Reykjavik, Iceland', lat: 64.1466, lon: -21.9426 },
+    { name: 'Auckland, New Zealand', lat: -36.8485, lon: 174.7633 }
+  ];
+
+  var state = { lat: 28.6139, lon: 77.2090, y: 2026, m: 10, d: 2, tzMode: 'auto' };
+
+  function showError(msg) {
+    var e = $('gh-error');
+    e.textContent = msg;
+    e.classList.remove('hidden');
+  }
+  function hideError() { $('gh-error').classList.add('hidden'); }
+
+  function getOffsetMin() {
+    if (state.tzMode === 'auto') return -new Date().getTimezoneOffset();
+    return state.tzMode;
+  }
+
+  function deviceYMD() {
+    var n = new Date();
+    return { y: n.getFullYear(), m: n.getMonth() + 1, d: n.getDate() };
+  }
+
+  function readYMD() {
+    var v = $('gh-date').value;
+    if (v) {
+      var p = v.split('-');
+      if (p.length === 3) return { y: parseInt(p[0], 10), m: parseInt(p[1], 10), d: parseInt(p[2], 10) };
+    }
+    return deviceYMD();
+  }
+
+  /* ---------- starfield ---------- */
+  function initStars() {
+    var cv = $('starCanvas');
+    if (!cv || !cv.getContext) return;
+    var ctx = cv.getContext('2d');
+    var stars = [];
+    function makeStars() {
+      stars = [];
+      var n = Math.min(230, Math.floor(cv.width * cv.height / 8500));
+      for (var i = 0; i < n; i++) {
+        stars.push({ x: Math.random() * cv.width, y: Math.random() * cv.height,
+                     r: Math.random() * 1.3 + 0.3, p: Math.random() * Math.PI * 2,
+                     s: 0.4 + Math.random() * 1.4 });
+      }
+    }
+    function resize() { cv.width = window.innerWidth; cv.height = window.innerHeight; makeStars(); }
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function draw(t) {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        var a = 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t / 1000 * st.s + st.p));
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+        ctx.fill();
+      }
+      if (!reduced) requestAnimationFrame(draw);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    draw(0);
+  }
+
+  /* ---------- sky arc rendering ---------- */
+  var SKY = { w: 720, h: 320, elMin: -22, elMax: 78, padTop: 20, padBottom: 20 };
+  function sx(t) { return (t / 1440) * SKY.w; }
+  function sy(el) {
+    var span = SKY.elMax - SKY.elMin;
+    return (SKY.h - SKY.padBottom) - ((el - SKY.elMin) / span) * (SKY.h - SKY.padTop - SKY.padBottom);
+  }
+  function elAt(pts, t) {
+    if (t <= pts[0].t) return pts[0].elevation;
+    for (var i = 1; i < pts.length; i++) {
+      if (pts[i].t >= t) {
+        var a = pts[i - 1], b = pts[i];
+        var f = (t - a.t) / (b.t - a.t);
+        return a.elevation + f * (b.elevation - a.elevation);
+      }
+    }
+    return pts[pts.length - 1].elevation;
+  }
+  function crossing(pts, val, dir) {
+    for (var i = 1; i < pts.length; i++) {
+      var a = pts[i - 1].elevation, b = pts[i].elevation;
+      if (dir > 0 && a < val && b >= val) {
+        var f = (val - a) / (b - a);
+        return pts[i - 1].t + f * (pts[i].t - pts[i - 1].t);
+      }
+      if (dir < 0 && a > val && b <= val) {
+        var f2 = (val - a) / (b - a);
+        return pts[i - 1].t + f2 * (pts[i].t - pts[i - 1].t);
+      }
+    }
+    return null;
+  }
+  function bandPath(pts, tA, tB, baseEl) {
+    if (tA === null || tB === null || tB <= tA) return '';
+    var d = 'M ' + sx(tA).toFixed(1) + ' ' + sy(elAt(pts, tA)).toFixed(1);
+    for (var i = 0; i < pts.length; i++) {
+      if (pts[i].t > tA && pts[i].t < tB) {
+        d += ' L ' + sx(pts[i].t).toFixed(1) + ' ' + sy(pts[i].elevation).toFixed(1);
+      }
+    }
+    d += ' L ' + sx(tB).toFixed(1) + ' ' + sy(elAt(pts, tB)).toFixed(1);
+    d += ' L ' + sx(tB).toFixed(1) + ' ' + sy(baseEl).toFixed(1);
+    d += ' L ' + sx(tA).toFixed(1) + ' ' + sy(baseEl).toFixed(1) + ' Z';
+    return d;
+  }
+
+  function renderSky(sliderT) {
+    var svg = $('skySvg');
+    var off = getOffsetMin();
+    var pts = sunPath(state.lat, state.lon, state.y, state.m, state.d, 144);
+    var g = goldenHourWindows(state.lat, state.lon, state.y, state.m, state.d);
+
+    var curve = '';
+    for (var i = 0; i < pts.length; i++) {
+      curve += (i === 0 ? 'M ' : ' L ') + sx(pts[i].t).toFixed(1) + ' ' + sy(pts[i].elevation).toFixed(1);
+    }
+
+    /* night shading: area under the curve where the sun is below the horizon */
+    var night = '';
+    var runA = null, runB = null;
+    function flushRun() {
+      if (runA === null) return;
+      var d = 'M ' + sx(runA).toFixed(1) + ' ' + sy(elAt(pts, runA)).toFixed(1);
+      for (var j = 0; j < pts.length; j++) {
+        if (pts[j].t > runA && pts[j].t < runB) {
+          d += ' L ' + sx(pts[j].t).toFixed(1) + ' ' + sy(pts[j].elevation).toFixed(1);
+        }
+      }
+      d += ' L ' + sx(runB).toFixed(1) + ' ' + sy(elAt(pts, runB)).toFixed(1);
+      d += ' L ' + sx(runB).toFixed(1) + ' ' + SKY.h + ' L ' + sx(runA).toFixed(1) + ' ' + SKY.h + ' Z';
+      night += d + ' ';
+      runA = null; runB = null;
+    }
+    for (var k = 0; k < pts.length; k++) {
+      if (pts[k].elevation < 0) { if (runA === null) runA = pts[k].t; runB = pts[k].t; }
+      else flushRun();
+    }
+    flushRun();
+
+    /* golden + blue bands */
+    var gold = '';
+    var b1a = crossing(pts, 0, 1), b1b = crossing(pts, 6, 1);
+    var b2a = crossing(pts, 6, -1), b2b = crossing(pts, 0, -1);
+    gold += bandPath(pts, b1a, b1b, 0) + ' ' + bandPath(pts, b2a, b2b, 0);
+    var blue = '';
+    var c1a = crossing(pts, -6, 1), c1b = crossing(pts, 0, 1);
+    var c2a = crossing(pts, 0, -1), c2b = crossing(pts, -6, -1);
+    blue += bandPath(pts, c1a, c1b, -6) + ' ' + bandPath(pts, c2a, c2b, -6);
+
+    var hY = sy(0);
+    var s = '';
+    s += '<defs>'
+      + '<radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">'
+      + '<stop offset="0%" stop-color="#FFE9C4"/><stop offset="55%" stop-color="#FF9E5E"/><stop offset="100%" stop-color="#FF9E5E" stop-opacity="0"/>'
+      + '</radialGradient>'
+      + '<linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">'
+      + '<stop offset="0%" stop-color="#7B5EA7"/><stop offset="50%" stop-color="#FF9E5E"/><stop offset="100%" stop-color="#7B5EA7"/>'
+      + '</linearGradient></defs>';
+    s += '<rect x="0" y="0" width="720" height="320" rx="12" fill="rgba(8,12,30,0.55)"/>';
+    if (night) s += '<path d="' + night + '" fill="rgba(2,5,16,0.55)"/>';
+    if (blue) s += '<path d="' + blue + '" fill="rgba(123,94,167,0.45)"/>';
+    if (gold) s += '<path d="' + gold + '" fill="rgba(255,158,94,0.35)"/>';
+    s += '<line x1="0" y1="' + hY.toFixed(1) + '" x2="720" y2="' + hY.toFixed(1) + '" stroke="rgba(255,255,255,0.35)" stroke-dasharray="6 5" stroke-width="1.5"/>';
+    s += '<text x="8" y="' + (hY - 6).toFixed(1) + '" fill="#94A3B8" font-size="11">horizon</text>';
+    s += '<path d="' + curve + '" fill="none" stroke="url(#arcGrad)" stroke-width="3" stroke-linecap="round"/>';
+
+    function marker(t, label, color) {
+      if (t === null) return '';
+      var x = sx(t), y = sy(elAt(pts, t));
+      return '<line x1="' + x.toFixed(1) + '" y1="' + y.toFixed(1) + '" x2="' + x.toFixed(1) + '" y2="' + hY.toFixed(1)
+        + '" stroke="' + color + '" stroke-width="1.5" stroke-dasharray="3 3"/>'
+        + '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4" fill="' + color + '"/>'
+        + '<text x="' + Math.min(650, Math.max(8, x - 24)).toFixed(1) + '" y="' + (hY + 18).toFixed(1) + '" fill="' + color + '" font-size="11" font-weight="600">' + label + '</text>';
+    }
+    s += marker(g.sunrise, formatClock(g.sunrise, off), '#FFC79A');
+    s += marker(g.sunset, formatClock(g.sunset, off), '#B79CFF');
+
+    /* now marker (only meaningful for today's date, still drawn) */
+    var nowT = (new Date().getTime() / 60000) % 1440;
+    var nowEl = elAt(pts, nowT);
+    s += '<circle cx="' + sx(nowT).toFixed(1) + '" cy="' + sy(nowEl).toFixed(1) + '" r="4.5" fill="#fff" opacity="0.9">'
+      + '<animate attributeName="r" values="4.5;7;4.5" dur="2s" repeatCount="indefinite"/></circle>';
+
+    /* slider sun */
+    var st = sliderT === undefined ? 720 : sliderT;
+    var sEl = elAt(pts, st);
+    s += '<circle cx="' + sx(st).toFixed(1) + '" cy="' + sy(sEl).toFixed(1) + '" r="16" fill="url(#sunGlow)" opacity="0.9"/>';
+    s += '<circle cx="' + sx(st).toFixed(1) + '" cy="' + sy(sEl).toFixed(1) + '" r="8" fill="#FF9E5E" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>';
+
+    svg.innerHTML = s;
+    updateReadout(st, sEl);
+  }
+
+  function updateReadout(t, el) {
+    var off = getOffsetMin();
+    if (el === undefined) el = sunElevation(state.lat, state.lon, state.y, state.m, state.d, t);
+    $('ro-time').textContent = formatClock(t, off);
+    $('ro-el').textContent = (el >= 0 ? '+' : '') + el.toFixed(1) + '°';
+    var ph = phaseForElevation(el);
+    var phe = $('ro-phase');
+    phe.textContent = ph;
+    phe.style.color = (ph === 'Golden Hour') ? '#FF9E5E' : (ph === 'Blue Hour' ? '#B79CFF' : '#E2E8F0');
+  }
+
+  function winText(w, off) {
+    if (!w) return '—';
+    return formatClock(w.start, off) + ' – ' + formatClock(w.end, off);
+  }
+
+  function renderToday() {
+    var off = getOffsetMin();
+    var g = goldenHourWindows(state.lat, state.lon, state.y, state.m, state.d);
+    $('skyDateLabel').textContent = '· ' + formatDateLabel(state.y, state.m, state.d);
+    $('r-sunrise').textContent = formatClock(g.sunrise, off);
+    $('r-noon').textContent = formatClock(g.solarNoon, off);
+    $('r-sunset').textContent = formatClock(g.sunset, off);
+    $('r-daylen').textContent = formatDuration(g.dayLengthMin);
+    var total = (g.morning ? g.morning.durationMin : 0) + (g.evening ? g.evening.durationMin : 0);
+    $('r-quality').textContent = goldenQuality(total);
+
+    var gmT = $('gm-time'), gmD = $('gm-dur'), gmN = $('gm-note');
+    var geT = $('ge-time'), geD = $('ge-dur'), geN = $('ge-note');
+    if (g.status === 'polar-day') {
+      gmT.textContent = 'All day'; gmD.textContent = '—';
+      gmN.textContent = 'The sun never sets today — golden light lingers around solar midnight.';
+      geT.textContent = 'All day'; geD.textContent = '—';
+      geN.textContent = 'Shoot any time; the lowest, warmest sun is near ' + formatClock(g.solarNoon > 720 ? g.solarNoon - 720 : g.solarNoon + 720, off) + '.';
+    } else if (g.status === 'polar-night') {
+      gmT.textContent = 'No sunrise'; geT.textContent = 'No sunrise';
+      gmD.textContent = '—'; geD.textContent = '—';
+      gmN.textContent = 'The sun never rises today — no golden hour.';
+      geN.textContent = 'Check the blue hour tab: twilight may still paint the sky.';
+    } else if (!g.morning || !g.evening) {
+      gmT.textContent = 'Extended golden light'; geT.textContent = 'Extended golden light';
+      gmD.textContent = formatDuration(g.dayLengthMin); geD.textContent = formatDuration(g.dayLengthMin);
+      gmN.textContent = 'The sun stays below 6° all day — one long, moody golden glow.';
+      geN.textContent = 'Expose carefully; light levels stay low and change slowly.';
+    } else {
+      gmT.textContent = winText(g.morning, off); gmD.textContent = formatDuration(g.morning.durationMin);
+      gmN.textContent = 'Soft front-light — face east and shoot into the low sun.';
+      geT.textContent = winText(g.evening, off); geD.textContent = formatDuration(g.evening.durationMin);
+      geN.textContent = 'Warmest light of the day — stay 15 min past sunset for the afterglow.';
+    }
+  }
+
+  function renderWeek() {
+    var off = getOffsetMin();
+    var rows = weekPlanner(state.lat, state.lon, state.y, state.m, state.d);
+    var html = '';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var hl = i === 0 ? ' style="background:rgba(255,158,94,0.08)"' : '';
+      html += '<tr class="border-t border-white/5"' + hl + '>'
+        + '<td class="px-4 py-3 font-semibold whitespace-nowrap">' + shortDateLabel(r.y, r.m, r.d) + (i === 0 ? ' <span class="text-[10px] text-[#FF9E5E] font-bold">TODAY</span>' : '') + '</td>'
+        + '<td class="px-4 py-3 whitespace-nowrap">' + formatClock(r.sunrise, off) + '</td>'
+        + '<td class="px-4 py-3 whitespace-nowrap">' + formatClock(r.sunset, off) + '</td>'
+        + '<td class="px-4 py-3 whitespace-nowrap text-[#FFC79A]">' + (r.goldenMorning ? winText(r.goldenMorning, off) : '—') + '</td>'
+        + '<td class="px-4 py-3 whitespace-nowrap text-[#B79CFF]">' + (r.goldenEvening ? winText(r.goldenEvening, off) : '—') + '</td>'
+        + '<td class="px-4 py-3 whitespace-nowrap">' + formatDuration(r.dayLengthMin) + '</td></tr>';
+    }
+    $('weekBody').innerHTML = html;
+  }
+
+  var TW_MEANINGS = {
+    civil: 'Bright enough for outdoor activity without lamps.',
+    nautical: 'Horizon still visible; first stars appear — great for seascapes.',
+    astronomical: 'Sky dark enough for the Milky Way and deep-sky shots.'
+  };
+
+  function renderBlue() {
+    var off = getOffsetMin();
+    var b = blueHourWindows(state.lat, state.lon, state.y, state.m, state.d);
+    var t = twilightTimes(state.lat, state.lon, state.y, state.m, state.d);
+    $('bm-time').textContent = b.morning ? winText(b.morning, off) : '— (sun stays too high)';
+    $('bm-dur').textContent = b.morning ? formatDuration(b.morning.durationMin) : '—';
+    $('be-time').textContent = b.evening ? winText(b.evening, off) : '— (sun stays too high)';
+    $('be-dur').textContent = b.evening ? formatDuration(b.evening.durationMin) : '—';
+    var rows = [
+      ['Civil twilight', t.civil.dawn, t.civil.dusk, TW_MEANINGS.civil],
+      ['Nautical twilight', t.nautical.dawn, t.nautical.dusk, TW_MEANINGS.nautical],
+      ['Astronomical twilight', t.astronomical.dawn, t.astronomical.dusk, TW_MEANINGS.astronomical]
+    ];
+    var html = '';
+    for (var i = 0; i < rows.length; i++) {
+      html += '<tr class="border-t border-white/5"><td class="px-4 py-3 font-semibold whitespace-nowrap">' + rows[i][0] + '</td>'
+        + '<td class="px-4 py-3 whitespace-nowrap">' + formatClock(rows[i][1], off) + '</td>'
+        + '<td class="px-4 py-3 whitespace-nowrap">' + formatClock(rows[i][2], off) + '</td>'
+        + '<td class="px-4 py-3 text-slate-400">' + rows[i][3] + '</td></tr>';
+    }
+    $('twBody').innerHTML = html;
+  }
+
+  function renderShoot() {
+    var key = $('shootSelect').value;
+    var items = shootChecklist(key);
+    var box = $('shootList');
+    box.innerHTML = '';
+    for (var i = 0; i < items.length; i++) {
+      (function (it) {
+        var label = document.createElement('label');
+        label.className = 'checkrow glass rounded-2xl p-4 flex gap-3 cursor-pointer';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.addEventListener('change', function () {
+          label.classList.toggle('done', cb.checked);
+        });
+        var div = document.createElement('div');
+        var p1 = document.createElement('p');
+        p1.className = 'shot font-semibold text-sm';
+        p1.textContent = it.shot;
+        var p2 = document.createElement('p');
+        p2.className = 'text-xs text-slate-400 mt-1 leading-relaxed';
+        p2.textContent = it.tip;
+        div.appendChild(p1); div.appendChild(p2);
+        label.appendChild(cb); label.appendChild(div);
+        box.appendChild(label);
+      })(items[i]);
+    }
+  }
+
+  function getSaved() {
+    try {
+      var v = JSON.parse(localStorage.getItem('glowhour.saved.v1'));
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
+  function setSaved(a) {
+    try { localStorage.setItem('glowhour.saved.v1', JSON.stringify(a)); } catch (e) {}
+  }
+
+  function renderSaved() {
+    var list = getSaved();
+    var box = $('sv-list');
+    box.innerHTML = '';
+    $('sv-empty').style.display = list.length ? 'none' : 'block';
+    for (var i = 0; i < list.length; i++) {
+      (function (place, idx) {
+        var card = document.createElement('div');
+        card.className = 'glass rounded-2xl p-4';
+        var h = document.createElement('p');
+        h.className = 'font-display font-bold';
+        h.textContent = place.name;
+        var c = document.createElement('p');
+        c.className = 'text-xs text-slate-400 mt-1';
+        c.textContent = place.lat.toFixed(4) + ', ' + place.lon.toFixed(4);
+        var row = document.createElement('div');
+        row.className = 'flex gap-2 mt-3';
+        var load = document.createElement('button');
+        load.className = 'btn-sun rounded-lg px-3 py-1.5 text-xs';
+        load.textContent = 'Load';
+        load.addEventListener('click', function () {
+          $('gh-lat').value = place.lat;
+          $('gh-lon').value = place.lon;
+          recompute();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        var del = document.createElement('button');
+        del.className = 'btn-ghost rounded-lg px-3 py-1.5 text-xs font-semibold text-red-300';
+        del.textContent = 'Delete';
+        del.addEventListener('click', function () {
+          var l = getSaved();
+          l.splice(idx, 1);
+          setSaved(l);
+          renderSaved();
+        });
+        row.appendChild(load); row.appendChild(del);
+        card.appendChild(h); card.appendChild(c); card.appendChild(row);
+        box.appendChild(card);
+      })(list[i], i);
+    }
+  }
+
+  function savePlace(name, lat, lon) {
+    var v = validateCoords(lat, lon);
+    if (!v.ok) { showError(v.errors.join(' ')); return; }
+    hideError();
+    var nm = (name || '').trim() || ('Place ' + (getSaved().length + 1));
+    var l = getSaved();
+    l.push({ name: nm, lat: v.lat, lon: v.lon });
+    setSaved(l);
+    renderSaved();
+  }
+
+  function recompute() {
+    var v = validateCoords($('gh-lat').value, $('gh-lon').value);
+    if (!v.ok) { showError(v.errors.join(' ')); return false; }
+    hideError();
+    state.lat = v.lat; state.lon = v.lon;
+    var ymd = readYMD();
+    state.y = ymd.y; state.m = ymd.m; state.d = ymd.d;
+    state.tzMode = $('gh-tz').value === 'auto' ? 'auto' : parseInt($('gh-tz').value, 10);
+    try { localStorage.setItem('glowhour.last.v1', JSON.stringify({ lat: state.lat, lon: state.lon })); } catch (e) {}
+    renderSky(parseInt($('gh-slider').value, 10));
+    renderToday();
+    renderWeek();
+    renderBlue();
+    tick();
+    return true;
+  }
+
+  function fmtCountdown(mins) {
+    mins = Math.max(0, Math.round(mins));
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return h > 0 ? h + 'h ' + m + 'm' : m + ' min';
+  }
+
+  function tick() {
+    var utcMin = (new Date().getTime() / 60000) % 1440;
+    var g = goldenHourWindows(state.lat, state.lon, state.y, state.m, state.d);
+    var b = blueHourWindows(state.lat, state.lon, state.y, state.m, state.d);
+    var html;
+    if (g.status === 'polar-day') {
+      html = 'Polar day — the sun never sets here today.';
+    } else if (g.status === 'polar-night') {
+      html = 'Polar night — the sun never rises here today.';
+    } else if (g.morning && utcMin < g.morning.start) {
+      html = 'Morning golden hour starts in <strong class="text-white">' + fmtCountdown(g.morning.start - utcMin) + '</strong>';
+    } else if (g.morning && utcMin <= g.morning.end) {
+      html = '<span class="text-[#FF9E5E] font-bold">Golden hour is happening now</span> — ends in <strong class="text-white">' + fmtCountdown(g.morning.end - utcMin) + '</strong>';
+    } else if (g.evening && utcMin < g.evening.start) {
+      html = 'Evening golden hour starts in <strong class="text-white">' + fmtCountdown(g.evening.start - utcMin) + '</strong>';
+    } else if (g.evening && utcMin <= g.evening.end) {
+      html = '<span class="text-[#FF9E5E] font-bold">Golden hour is happening now</span> — ends in <strong class="text-white">' + fmtCountdown(g.evening.end - utcMin) + '</strong>';
+    } else if (b.evening && utcMin <= b.evening.end) {
+      html = '<span class="text-[#B79CFF] font-bold">Blue hour is happening now</span> — night falls soon.';
+    } else {
+      html = 'Golden hour is done for this date — check the 7-day planner.';
+    }
+    $('nowBanner').innerHTML = html;
+  }
+
+  function initControls() {
+    var tz = $('gh-tz');
+    var auto = document.createElement('option');
+    auto.value = 'auto'; auto.textContent = 'Device timezone (auto)';
+    tz.appendChild(auto);
+    for (var m = -720; m <= 840; m += 30) {
+      var o = document.createElement('option');
+      o.value = String(m);
+      var sign = m < 0 ? '-' : '+', a = Math.abs(m);
+      o.textContent = 'UTC' + sign + Math.floor(a / 60) + ':' + (a % 60 ? '30' : '00');
+      tz.appendChild(o);
+    }
+    var city = $('gh-city');
+    for (var i = 0; i < CITIES.length; i++) {
+      var c = document.createElement('option');
+      c.value = String(i);
+      c.textContent = CITIES[i].name;
+      city.appendChild(c);
+    }
+    var d = deviceYMD();
+    var mm = (d.m < 10 ? '0' : '') + d.m, dd = (d.d < 10 ? '0' : '') + d.d;
+    $('gh-date').value = d.y + '-' + mm + '-' + dd;
+
+    try {
+      var last = JSON.parse(localStorage.getItem('glowhour.last.v1'));
+      if (last && isFinite(last.lat) && isFinite(last.lon)) {
+        $('gh-lat').value = last.lat;
+        $('gh-lon').value = last.lon;
+      }
+    } catch (e) {}
+
+    city.addEventListener('change', function () {
+      if (city.value === '') return;
+      var c = CITIES[parseInt(city.value, 10)];
+      $('gh-lat').value = c.lat;
+      $('gh-lon').value = c.lon;
+      city.value = '';
+      recompute();
+    });
+    $('gh-calc').addEventListener('click', recompute);
+    $('gh-date').addEventListener('change', recompute);
+    $('gh-tz').addEventListener('change', recompute);
+    $('gh-slider').addEventListener('input', function () {
+      renderSky(parseInt($('gh-slider').value, 10));
+    });
+    $('gh-now').addEventListener('click', function () {
+      var t = Math.floor((new Date().getTime() / 60000) % 1440);
+      $('gh-slider').value = t;
+      renderSky(t);
+    });
+    $('gh-locate').addEventListener('click', function () {
+      var btn = $('gh-locate');
+      if (!navigator.geolocation) {
+        showError('Geolocation is not supported in this browser — enter coordinates manually or pick a city.');
+        return;
+      }
+      btn.textContent = 'Locating…';
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        btn.textContent = 'Use my location';
+        $('gh-lat').value = pos.coords.latitude.toFixed(4);
+        $('gh-lon').value = pos.coords.longitude.toFixed(4);
+        recompute();
+      }, function (err) {
+        btn.textContent = 'Use my location';
+        showError('Could not get your location (' + (err && err.message ? err.message : 'permission denied') + '). Enter coordinates manually or pick a city.');
+      }, { timeout: 12000 });
+    });
+
+    var tabs = document.querySelectorAll('.tabbtn');
+    for (var t2 = 0; t2 < tabs.length; t2++) {
+      tabs[t2].addEventListener('click', function () {
+        for (var k = 0; k < tabs.length; k++) {
+          tabs[k].classList.remove('active');
+          $(tabs[k].getAttribute('data-tab')).classList.add('hidden');
+        }
+        this.classList.add('active');
+        $(this.getAttribute('data-tab')).classList.remove('hidden');
+      });
+    }
+
+    $('shootSelect').addEventListener('change', renderShoot);
+    $('sv-save').addEventListener('click', function () {
+      savePlace($('sv-name').value, $('sv-lat').value, $('sv-lon').value);
+      $('sv-name').value = ''; $('sv-lat').value = ''; $('sv-lon').value = '';
+    });
+    $('sv-save-current').addEventListener('click', function () {
+      savePlace('Current location', $('gh-lat').value, $('gh-lon').value);
+    });
+  }
+
+  initStars();
+  initControls();
+  renderShoot();
+  renderSaved();
+  recompute();
+  setInterval(tick, 30000);
+})();
+</script>
+</body>
+</html>
